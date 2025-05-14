@@ -140,7 +140,7 @@
       if (email === "admin@healthdata.com" && password === "123456") {
         form.querySelector('.login-btn').textContent = "Entrando...";
         setTimeout(() => {
-          window.location.href = "/dashboard.html";
+          window.location.href = "menu.php";
         }, 1000);
       } else {
         errorMessage.style.display = 'block';
