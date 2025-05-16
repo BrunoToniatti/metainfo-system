@@ -1,14 +1,13 @@
 <?php
-$servername = "localhost";
-$user = "root";
-$password = "";
-$database = "metainfo";
+$serverName = "LAPTOP-ELQUK5G2";
+$connectionOptions = [
+    "Database" => "barbearia",
+    "TrustServerCertificate" => true,
+    "CharacterSet" => "UTF-8"
+];
 
-$conn = mysqli_connect($servername, $user, $password, $database);
+$conn = sqlsrv_connect($serverName, $connectionOptions);
 
-// if ($conn){
-//     echo "Conectado";
-// }else{
-//     echo "Errou";
-// }
-?>
+if (!$conn) {
+    die(print_r(sqlsrv_errors(), true));
+}

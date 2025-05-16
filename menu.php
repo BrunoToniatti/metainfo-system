@@ -115,13 +115,59 @@
       margin-bottom: 1rem;
       color: #333;
     }
+
+    .logout-animation{
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 100px;
+      height: 100px;
+      background-color: #4db8b8;
+      color: white;
+      font-weight: bold;
+      font-size: 1rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      animation: rollOut 1s ease forwards;
+    }
+
+    @keyframes rollOut {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -200%) rotate(720deg) scale(0.3);
+    opacity: 0;
+  }
+}
+#progressBar {
+      margin-top: 1rem;
+      height: 20px;
+      width: 100%;
+      background: #eee;
+      border-radius: 10px;
+      overflow: hidden;
+      display: none;
+    }
+    #progressBar div {
+      height: 100%;
+      width: 0%;
+      background: #4db8b8;
+      transition: width 0.4s ease;
+    }
+
   </style>
 </head>
 <body>
   <div class="sidebar">
     <h2>Menu</h2>
-    <div class="menu-item" onclick="loadContent('logs')">📄 Logs</div>
-    <div class="menu-item" onclick="loadContent('login')">🔐 Atividade de Login</div>
+    <div class="menu-item" onclick="loadContent('relatorio')">📊 Relatório de Atendimentos</div>
+    <div class="menu-item" onclick="loadContent('etl')">📤 ETL Upload</div>
   </div>
 
   <div class="main-content">
@@ -136,6 +182,17 @@
   </div>
 
   <script>
+    function logout() {
+      const ball = document.createElement('div');
+      ball.className = 'logout-animation';
+      ball.textContent = 'Saindo...';
+      document.body.appendChild(ball);
+
+      setTimeout(() => {
+        window.location.href = "index.php";
+      }, 1200);
+      
+    }
     function loadContent(type) {
       const content = document.getElementById('contentArea');
 
@@ -144,7 +201,7 @@
           .then(res => res.json())
           .then(data => {
             let html = `
-              <h4>📄 Logs do Sistema</h4>
+              <h4>📄 Lista de logins</h4>
               <table style="width:100%; border-collapse: collapse;">
                 <thead>
                   <tr style="background:#f2f2f2;">
@@ -206,12 +263,57 @@
         .catch(() => {
             content.innerHTML = `<p style="color:red;">Erro ao carregar logs.</p>`;
         });
-      }
-    }
+      }else if (type === 'etl') {
+        content.innerHTML = `
+          <h4>📤 Envio de Arquivo TXT</h4>
+          <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" id="fileInput" name="file" accept=".txt" required style="margin-top: 10px;"/>
+            <button type="submit" style="margin-left: 10px; background-color: #4db8b8; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Enviar</button>
+          </form>
+          <div id="progressBar"><div></div></div>
+          <div id="message" style="margin-top: 15px;"></div>
+        `;
 
-    function logout() {
-      alert("Saindo do sistema...");
-      window.location.href = "index.php";
+        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+          event.preventDefault();
+          const fileInput = document.getElementById('fileInput');
+          const formData = new FormData();
+          formData.append('file', fileInput.files[0]);
+
+          const progressBar = document.getElementById('progressBar');
+          const progressFill = progressBar.querySelector('div');
+          const message = document.getElementById('message');
+
+          progressBar.style.display = 'block';
+          let percent = 0;
+          const interval = setInterval(() => {
+            percent += 5;
+            if (percent <= 95) {
+              progressFill.style.width = percent + '%';
+            }
+          }, 300);
+
+          try {
+            const response = await fetch('http://127.0.0.1:5000/api/etl', {
+              method: 'POST',
+              body: formData
+            });
+
+            clearInterval(interval);
+            progressFill.style.width = '100%';
+
+            const result = await response.json();
+            if (response.ok) {
+              message.innerHTML = '<span style="color: green; font-weight: bold;">Arquivo enviado com sucesso!</span>';
+            } else {
+              message.innerHTML = `<span style="color: red; font-weight: bold;">Erro: ${result.error}</span>`;
+            }
+          } catch (error) {
+            clearInterval(interval);
+            message.innerHTML = `<span style="color: red; font-weight: bold;">Erro: ${error.message}</span>`;
+          }
+        });
+      }
     }
   </script>
 </body>
